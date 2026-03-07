@@ -55,7 +55,7 @@ All behaviors, system calls, and driver interactions remain identical to upstrea
 
 Simply, the INPUT/OUTPUT remains 100% the same. The only modification is how the kernel is compiled and how the INPUT reaches the OUTPUT state. 
 
-As of right now the current development plan of Monela is to wait for the official release of Linux 7 that will support Rust fully. Then I will use Rust and write a second kernel that only has the needed functions and features described above and then I will compile it with the Linux kernel. This prevents errors caused from mixing code into the Linux kernel. It is planned to be a dual kernel OS. This does sound impossible, but it's not as unrealistic as it may sound. 
+As of right now the current development plan of Monela is to wait for the official release of Linux 7 that will support Rust fully. Then I will use Rust and write a second kernel that only has the needed functions and features described above and then I will compile it with the Linux kernel. This prevents errors caused from mixing code into the Linux kernel. It is planned to be a dual kernel OS. This does sound impossible, but it's not as unrealistic as it may sound. This is because the Monela "kernel" isn't exactly a kernel. 
 
 
 DOCS ARE COMING SOON (40 PAGE PDF), CHECK BACK LATER FOR MORE.
