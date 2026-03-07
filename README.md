@@ -54,3 +54,7 @@ Now, of course it has literal code modifications to the kernel, but it behaves t
 All behaviors, system calls, and driver interactions remain identical to upstream Linux. The differentiation lies entirely in how the kernel is compiled and the internal logic used to process tasks. Monela preserves the standard Linux environment while only adding it's special Monela implications.  
 
 Simply, the INPUT/OUTPUT remains 100% the same. The only modification is how the kernel is compiled and how the INPUT reaches the OUTPUT state. 
+
+
+
+DOCS ARE COMING SOON, CHECK BACK LATER FOR MORE.
