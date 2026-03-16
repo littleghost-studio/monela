@@ -114,7 +114,6 @@ Sizes: 16 bits | 8 bits | 16 bits | 16 bits | 88 bits
 - Sub-Unit redundancy
 - CPOV token verification
 - **Compatibility:** Linux syscalls, drivers, and applications remain fully compatible.
-- 
 ---
 
 Monela OS for now is just a research operating system started by my own interest. Comibing **monolithic Linux compatibility, microkernel-style isolation, capability-based security, fault-tolerant parallel task execution, immutable & verified boot, and hardened privilege escalation**. It is **designed for high-load multi-core systems**, making it highly stable, secure, and scalable for research, enterprise, and experimental applications.
