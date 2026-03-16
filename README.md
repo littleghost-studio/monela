@@ -9,6 +9,7 @@
 [![Linux](https://img.shields.io/badge/kernel-Linux-lightgrey?logo=linux)](https://www.kernel.org/)
 
 ---
+(Please note, this is a play-around research project and may have some design holes and I am not claiming to have the next big OS design and that I will totally destroy Torvalds and take over the universe. This is mostly just for fun and learning.) 
 
 ## About
 
