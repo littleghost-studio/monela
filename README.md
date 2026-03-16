@@ -4,58 +4,121 @@
 
 <br>
 
-[![License](https://img.shields.io/badge/license-GPL--2-blue)](https://opensource.org/licenses/GPL-2.0) 
 [![Status](https://img.shields.io/badge/status-Experimental-yellow)](https://github.com/) 
-[![C](https://img.shields.io/badge/-%20-3949AB?logo=c&logoColor=white)](https://en.wikipedia.org/wiki/C_(programming_language)) 
 [![Rust](https://img.shields.io/badge/-%20-CE412B?logo=rust&logoColor=white)](https://www.rust-lang.org/) 
 [![Linux](https://img.shields.io/badge/kernel-Linux-lightgrey?logo=linux)](https://www.kernel.org/)
 
+---
+
 ## About
-Monela is a Linux kernel fork that preserves full compatibility with standard Linux binaries and drivers while internally restructuring how the kernel executes tasks. Externally, it behaves exactly like Linux, so applications, libraries, and drivers work as expected. To Linux and software running on it, memory and resources appear fully global, but internally they are **owned, isolated, and verified**, providing zero-trust behavior without breaking compatibility.  
 
-Internally, Monela divides kernel subsystems into per-core execution units. Each unit handles a portion of kernel tasks, and tasks are distributed to units in parallel using internal queues that coordinate work without shared mutable state. This reduces race conditions on multi-core processors and enforces structured ownership of resources. By keeping the split **transparent**, Linux sees normal global behavior while benefiting from per-core isolation.  
+Monela OS is a research operating system that adds the Monela Visor, written entirely in Rust, to Linux. Monela lives beneath the Linux kernel, intercepting and mitigating all interactions between hardware, the Linux kernel, and userspace. This allows Monela to add certain features like: **monolithic compartmentalisation, workload scaling, virtual global access, CPOV (Capability, Precedence, Ownership, Verification), hsudo, verified boot, immutable system structures, and fault tolerance**.  
 
-Memory management, scheduling, and device handling respect core-level ownership. Kernel functions that would normally share data across cores route requests to the owning core, preventing simultaneous conflicting access. All kernel objects are capability-tagged, meaning each subsystem can only access memory or resources it has explicit permission for. This ensures that no module can modify another module's state without proper authorization, improving fault isolation and reducing unintended interactions.  
+Linux sees standard memory, I/O, and syscalls as usual, but all processes are mediated, verified, and controlled by Monela. Global access is **moderated and restricted**, but the kernel remains monolithic from Linux’s perspective. Monela virtualises global access and enforces security without altering Linux behavior or breaking application compatibility.
 
-All critical kernel structures and objects are immutable once created, preventing accidental or unauthorized modifications. Additionally, every operation is automatically reverified against ownership and capabilities, ensuring no module can bypass restrictions. Because verification is done asynchronously and per-core, **it can scale with workload without significantly impacting performance**, even under heavy system load.  
+This allows Monela to combine microkernel-like level isolation features, fault tolerance, and capability-based security** while maintaining full Linux compatibility, high performance, and system stability.
+
+---
+
+## Architecture Overview
+
+### Monela Visor 
+
+- **Purpose:** Monela is a hypervisor-style layer that sits below Linux. It does **not implement drivers, filesystem, or kernel services**. Its sole responsibility is to mediate, monitor, and enforce system policies.  
+- **Implementation:** Written entirely in Rust for Rust's security features, speed, and reliability. 
+- **Boot:**  
+  1. Hardware powers on → **verified boot** → Monela Visor starts.  
+  2. Monela locks immutable memory regions, sets up CPOV gates, and prepares Sub-Unit structures.
+  3. Linux kernel loads above Monela; all syscalls and hardware interactions are mediated transparently.
+  4. Monela sets up pre-auth channels for speed while being secure upon start up.
+  5. The OS is ready to go. 
+- **Immutable & Verified:** Monela control structures are immutable post-boot and the Linux kernel becomes immutable to prevent certain classes of attacks. You may enable disk encryption, key based logins, other custom security features, or SELinux policies on top of Monela to add extreme security measures. 
+
+### Kernel Groups (KGs) and Sub-Unit Load Spawning
+
+- **Kernel Groups:** Linux kernel subsystems are logically divided into **Kernel Groups (KGs)**, initially pinned to CPU cores for cache locality.  
+- **Sub-Unit Load Spawning:** Each KG can dynamically spawn ephemeral Sub-Units to handle parallel tasks:
+  - Prevents bottlenecks by avoiding a single task queue.
+  - Reduces crashes: failing pipelines are automatically replaced by new Sub-Units.
+  - Optimizes throughput under heavy workloads.  
+- **Behavior:** While KGs are pinned to cores initially, Sub-Units **can migrate dynamically** for load balancing without breaking cache optimizations.
+- **Impact:** Although Monela might be somewhat slower then standard operating systems such as Ubuntu on smaller tasks, Monela has better capability at scaling speed under heavier workloads. This is due to CPOV enforcement and puppet routing. 
+
+### CPOV (Capability, Precedence, Ownership, Verification)
+
+- **Purpose:** Ensures each task is verified, authorized, and routed securely.  
+- **Task Types:**
+  - **Macrotasks:** High-privilege operations requiring full CPOV verification (file I/O, network access, kernel-critical calls). Some macrotasks are pre-authorised and do not need to be verfiied each time. They are verified upon boot, and remain verified until a reboot where it generates new verification. This can be disabled at the cost of higher security but slower speeds. 
+  - **Microtasks:** Low-privilege, frequent operations ignored by CPOV for speed (mouse interrupts, timers).  
+- **CPOV Gates:**  
+  1. **User-Kernel Gate:** Intercepts user requests, assigns CPOV tokens, mediates access before passing to Linux.  
+  2. **Inter-KG Gate:** Allows pre-authorized communication between KGs without blocking main gate. Inter-KG macrotasks are no reverified each time, but rely on pre-auth channels verified at boot.
+- **CPOV Tokens:** Every macrotask is tagged with a cryptographically verified token:
+- Fields: Capability | Precedence | Ownership | Destination | Verification
+Sizes: 16 bits | 8 bits | 16 bits | 16 bits | 88 bits
+
+- Capability: Allowed operations (read/write/network/IPC/etc.)  
+- Precedence: Task priority (0=background, 255=kernel-critical)  
+- Ownership: Originating subsystem & instance  
+- Destination: Target KG/queue  
+- Verification: Signed entropy, time-bound, prevents replay attacks  
+- **Sub-Unit Ports:** Each KG contains a **small verification port** that:
+- Reads CPOV token, verifies authenticity, temporarily strips metadata for processing, and re-applies token for final verification.  
+- **Security Outcome:** Prevents unauthorized access, enforces microkernel-style compartmentalization, mitigates race conditions, and reduces risk of kernel panics.
+
+### hsudo (Hardened Sudo Replacement)
+
+- Replaces standard `sudo` with **hsudo**, which:
+- May require multi-factor authentication.  
+- Passes requests through CPOV verification.  
+- Mediates privileged operations and logs all escalations for auditability.
+- As well as more uninteresting details. 
+
+### Immutable System & Verified Boot
+
+- Critical Monela structures are immutable.  
+- Verified boot ensures Monela integrity before Linux starts.  
 
 ---
 
 ## Features
 
-- **Per-core kernel subsystems:** Each major subsystem is pinned to a CPU core to minimize shared-state conflicts and maximize parallel execution. Linux sees everything as normal global memory.  
-- **Dynamic task scaling:** When workloads increase, additional instances of a subsystem are spawned automatically to handle tasks in parallel. Once the load subsides, extra instances are removed, freeing resources. Each instance operates independently, and failures are contained without affecting the main execution flow.  
-- **Parallel task execution:** Subsystems receive tasks via internal queues and execute them concurrently across cores, without requiring inter-core message passing or global locks.  
-- **Ownership-based memory and resource management:** Kernel objects are assigned owners and capability tags to prevent unauthorized access across cores.  
-- **Full Linux compatibility:** Maintains standard Linux syscall behavior, filesystem access, drivers, and libraries.  
-- **Hardware-aware scaling:** The number of dynamic execution units is limited by available CPU cores, memory, and cache, ensuring safe operation under all supported hardware configurations.  
-- **Immutable core structures:** Critical kernel objects cannot be altered after creation, guaranteeing system integrity.  
-- **Per-operation verification:** Every action is automatically checked against ownership and capability rules, preventing unauthorized changes. Verification is done asynchronously to maintain performance.  
-- **Application Base:** Monela uses APT. 
-- **Sudo is hardened:** Sudo operations are more heavily managed.  
+- **Below Linux:** Can intercept and mediate all kernel, hardware, and userspace interactions.  
+- **Per-core Kernel Groups:** Optimizes CPU core allocation and cache usage for Linux subsystems.  
+- **Sub-Unit Load Spawning:** Ephemeral parallel workers increase throughput and prevent bottlenecks.  
+- **CPOV Security:** Capability-based, ownership-aware, verified task execution.  
+- **Microtask/Macrotask differentiation:** Reduces overhead while preserving security.  
+- **Immutable System and Verified Boot** Prevents tampering.  
+- **Optional disk encryption:** Hardware-level storage security.  
+- **hsudo:** Hardened, multi-factor privilege escalation.  
+- **Full Linux compatibility:** Maintains standard syscall, driver, and filesystem behavior.
 
 ---
 
 ## Hardware Requirements
 
-Monela is designed for modern multi-core hardware. Using older or single-core processors may reduce performance or cause instability.  
+- **CPU:** 64-bit, multi-core (4+ cores recommended), optimized for Intel Core i5/i7 (2010+) and AMD Ryzen (2017+).  
+- **GPU:** Supported by Linux kernel 6.x+ drivers (NVIDIA 10-series+, AMD Vega/RDNA+).  
+- **RAM:** 8 GB minimum, 16 GB recommended.  
+- Legacy devices or single-core systems may experience reduced performance or incompatibility due to per-core KG assignment.
 
-- **CPU:** 64-bit, multi-core processor, 4 cores or more recommended. Tested on Intel Core i5/i7 (2010+) and AMD Ryzen (2017+).  
-- **GPU:** Supported by Linux kernel 6.x+ drivers. Tested with NVIDIA 10-series and newer, AMD Vega/RDNA and newer.  
-- **RAM:** 8 GB minimum, 16 GB recommended for full performance.  
+---
 
-Legacy devices or drivers that rely on global kernel access may not function correctly under Monela's per-core execution model.
+## Feasibility Notes
 
-## IMPORTANT 
-A major misconception regarding Monela is that it functions as a "bridge" or "shim" over the Linux kernel, or that achieving full compatibility is impossible. To clarify: Monela is NOT a separate layer or a departure from the Linux architecture. It is, 100% natively, the exact monolithic Linux kernel.
+- Monela avoids **traditional dual-kernel pitfalls** by living below Linux, mediating interactions rather than replacing it.  
+- **Rust** ensures memory safety and concurrency correctness, enabling safe interception of Linux syscalls and device operations.  
+- **Performance:** Light tasks may appear slightly slower than Ubuntu due to security checks, but **heavy parallel workloads scale efficiently**.  
+- **Security:** Monela prevents panics, race conditions, and unauthorized access through:
+- Immutable memory
+- Sub-Unit redundancy
+- CPOV token verification
+- **Compatibility:** Linux syscalls, drivers, and applications remain fully compatible.
+- 
+---
 
-Now, of course it has literal code modifications to the kernel, but it behaves the same with added enforcements and "tolls." 
+Monela OS for now is just a research operating system started by my own interest. Comibing **monolithic Linux compatibility, microkernel-style isolation, capability-based security, fault-tolerant parallel task execution, immutable & verified boot, and hardened privilege escalation**. It is **designed for high-load multi-core systems**, making it highly stable, secure, and scalable for research, enterprise, and experimental applications.
 
-All behaviors, system calls, and driver interactions remain identical to upstream Linux. The differentiation lies entirely in how the kernel is compiled and the internal logic used to process tasks. Monela preserves the standard Linux environment while only adding it's special Monela implications.  
+Please note: This README is an EXTREMELY light description of both WHAT Monela is and HOW Monela actually will work. More detaild documentation is currently private, but will be released in the future. (I am very busy most of the time so it's hard to find time.) 
 
-Simply, the INPUT/OUTPUT remains 100% the same. The only modification is how the kernel is compiled and how the INPUT reaches the OUTPUT state. 
-
-As of right now the current development plan of Monela is to wait for the official release of Linux 7 that will support Rust fully. Then I will use Rust and write a second kernel that only has the needed functions and features described above and then I will compile it with the Linux kernel. This prevents errors caused from mixing code into the Linux kernel. It is planned to be a dual kernel OS. This does sound impossible, but it's not as unrealistic as it may sound. This is because the Monela "kernel" isn't exactly a kernel. 
-
-
-DOCS ARE COMING SOON (40 PAGE PDF), CHECK BACK LATER FOR MORE.
+I am also aware that having a visor be mixed in with userspace I/O among other things is extremely difficult and I am still designing how exactly this will be solved. It may in the end, change what Monela is itself. 
