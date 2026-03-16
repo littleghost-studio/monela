@@ -14,7 +14,7 @@
 
 Monela OS is a research operating system that adds the Monela Visor, written entirely in Rust, to Linux. Monela lives beneath the Linux kernel, intercepting and mitigating all interactions between hardware, the Linux kernel, and userspace. This allows Monela to add certain features like: **monolithic compartmentalisation, workload scaling, virtual global access, CPOV (Capability, Precedence, Ownership, Verification), hsudo, verified boot, immutable system structures, and fault tolerance**.  
 
-Linux sees standard memory, I/O, and syscalls as usual, but all processes are mediated, verified, and controlled by Monela. Global access is **moderated and restricted**, but the kernel remains monolithic from Linux’s perspective. Monela virtualises global access and enforces security without altering Linux behavior or breaking application compatibility.
+Linux sees standard memory, I/O, and syscalls as usual, but processes are mediated, verified, and controlled by Monela. Global access is **moderated and restricted**, but the kernel remains monolithic from Linux’s perspective. Monela virtualises global access and enforces security without altering Linux behavior or breaking application compatibility.
 
 This allows Monela to combine microkernel-like level isolation features, fault tolerance, and capability-based security** while maintaining full Linux compatibility, high performance, and system stability.
 
