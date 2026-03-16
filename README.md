@@ -116,7 +116,7 @@ Sizes: 16 bits | 8 bits | 16 bits | 16 bits | 88 bits
 - **Compatibility:** Linux syscalls, drivers, and applications remain fully compatible.
 ---
 
-Monela OS for now is just a research operating system started by my own interest. Comibing **monolithic Linux compatibility, microkernel-style isolation, capability-based security, fault-tolerant parallel task execution, immutable & verified boot, and hardened privilege escalation**. It is **designed for high-load multi-core systems**, making it highly stable, secure, and scalable for research, enterprise, and experimental applications.
+Monela OS for now is just a research operating system started by my own interest. Comibing **monolithic Linux compatibility, microkernel-style isolation, capability-based security, fault-tolerant parallel task execution, immutable & verified boot, and hardened privilege escalation**. It is **designed for high-load multi-core systems**, to make it highly stable, secure, and scalable for research, enterprise, and experimental applications.
 
 Please note: This README is an EXTREMELY light description of both WHAT Monela is and HOW Monela actually will work. More detaild documentation is currently private, but will be released in the future. (I am very busy most of the time so it's hard to find time.) 
 
