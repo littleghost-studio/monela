@@ -29,11 +29,11 @@ This allows Monela to combine microkernel-like level isolation features, fault t
 - **Implementation:** Written entirely in Rust for Rust's security features, speed, and reliability. 
 - **Boot:**  
   1. Hardware powers on → **verified boot** → Monela Visor starts.  
-  2. Monela locks immutable memory regions, sets up CPOV gates, and prepares Sub-Unit structures.
+  2. Monela locks immutable (by boundary) memory regions, sets up CPOV gates, and prepares Sub-Unit structures.
   3. Linux kernel loads above Monela; all syscalls and hardware interactions are mediated transparently.
   4. Monela sets up pre-auth channels for speed while being secure upon start up.
   5. The OS is ready to go. 
-- **Immutable & Verified:** Monela control structures are immutable post-boot and the Linux kernel becomes immutable to prevent certain classes of attacks. You may enable disk encryption, key based logins, other custom security features, or SELinux policies on top of Monela to add extreme security measures. 
+- **Immutable & Verified:** Monela control structures are immutable post-boot and the Linux kernel becomes immutable (like Vanilla OS) to prevent certain classes of attacks. You may enable disk encryption, key based logins, other custom security features, or SELinux policies on top of Monela to add extreme security measures. 
 
 ### Kernel Groups (KGs) and Sub-Unit Load Spawning
 
