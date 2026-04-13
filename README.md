@@ -122,3 +122,6 @@ Monela OS for now is just a research operating system started by my own interest
 Please note: This README is an EXTREMELY light description of both WHAT Monela is and HOW Monela actually will work. More detaild documentation is currently private, but will be released in the future. (I am very busy most of the time so it's hard to find time.) 
 
 I am also aware that having a visor be mixed in with userspace I/O among other things is extremely difficult and I am still designing how exactly this will be solved. It may in the end, change what Monela is itself. 
+
+
+**IMPORTANT: MONELA OS UPDATES HAVE BEEN MOVED TO https://github.com/MonelaLinux/Monela**
